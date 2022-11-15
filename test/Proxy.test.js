@@ -8,11 +8,11 @@ chai.use(smock.matchers);
 describe('Proxy', function () {
   let mockGovernance;
   let proxy;
-  let owner, addr1, addr2, addrs;
+  let owner, addr1;
   // `beforeEach` will run before each test, re-deploying the contract every
   // time. It receives a callback, which can be async.
   beforeEach(async function () {
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [owner, addr1] = await ethers.getSigners();
     const MockGovernance = await smock.mock('Governance');
     mockGovernance = await MockGovernance.deploy();
     await mockGovernance.deployed();

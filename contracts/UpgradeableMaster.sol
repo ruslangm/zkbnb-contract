@@ -3,158 +3,142 @@
 pragma solidity ^0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./Config.sol";
-import "./ZkBNBOwnable.sol";
 import "./Storage.sol";
+import "./interfaces/IZkBNBDesertMode.sol";
 
-/// @title Interface of the upgradeable master contract (defines notice period duration and allows finish upgrade during preparation of it)
+/// @title upgradeable master contract (defines notice period duration and allows finish upgrade during preparation of it)
 /// @author ZkBNB Team
-contract UpgradeableMaster is ZkBNBOwnable, Config, Storage {
-    using SafeMath for uint256;
-    /// @dev Configurable notice period
-    uint256 public constant UPGRADE_NOTICE_PERIOD = 4 weeks;
-    /// @dev Shortest notice period
-    uint256 public constant SHORTEST_UPGRADE_NOTICE_PERIOD = 0;
 
-    uint256 public constant SECURITY_COUNCIL_MEMBERS_NUMBER = 3;
+// TODO: add access control
+contract UpgradeableMaster {
+  using SafeMath for uint256;
 
-    /// @notice Notice period changed
-    event NoticePeriodChange(uint256 newNoticePeriod);
+  // Create a new role identifier for the UpgradeGatekeeper
+  bytes32 public constant ROLE_OPERATOR = keccak256("ROLE_OPERATOR");
 
-    address[] securityCouncilMembers;
+  /// @dev Configurable notice period
+  uint256 public constant UPGRADE_NOTICE_PERIOD = 4 weeks;
+  /// @dev Shortest notice period
+  uint256 public constant SHORTEST_UPGRADE_NOTICE_PERIOD = 0;
 
-    /// @dev Flag indicates that upgrade preparation status is active
-    /// @dev Will store false in case of not active upgrade mode
-    bool internal upgradePreparationActive;
+  uint256 internal constant SECURITY_COUNCIL_THRESHOLD = 3;
 
-    /// @dev Upgrade preparation activation timestamp (as seconds since unix epoch)
-    /// @dev Will be equal to zero in case of not active upgrade mode
-    uint256 internal upgradePreparationActivationTime;
+  IZkBNBDesertMode public zkBNB;
 
-    /// @dev Upgrade notice period, possibly shorten by the security council
-    uint256 internal approvedUpgradeNoticePeriod;
+  event NoticePeriodChange(uint256 newNoticePeriod);
+  event ZkBNBChanged(address zkBNB);
+  event SecurityCouncilChanged(address[3] securityCouncilMembers);
 
-    /// @dev Upgrade start timestamp (as seconds since unix epoch)
-    /// @dev Will be equal to zero in case of not active upgrade mode
-    uint256 internal upgradeStartTimestamp;
+  address[] securityCouncilMembers;
 
-    /// @dev Stores boolean flags which means the confirmations of the upgrade for each member of security council
-    /// @dev Will store zeroes in case of not active upgrade mode
-    mapping(uint256 => bool) internal securityCouncilApproves;
-    uint256 internal numberOfApprovalsFromSecurityCouncil;
+  /// @dev Flag indicates that upgrade preparation status is active
+  /// @dev Will store false in case of not active upgrade mode
+  bool internal upgradePreparationActive;
 
-    constructor(address[3] memory _securityCouncilMembers)
-        ZkBNBOwnable(msg.sender)
-    {
-        securityCouncilMembers = _securityCouncilMembers;
+  /// @dev Upgrade preparation activation timestamp (as seconds since unix epoch)
+  /// @dev Will be equal to zero in case of not active upgrade mode
+  uint256 internal _upgradePreparationActivationTime;
 
-        approvedUpgradeNoticePeriod = SHORTEST_UPGRADE_NOTICE_PERIOD;
-        emit NoticePeriodChange(approvedUpgradeNoticePeriod);
+  /// @dev Upgrade notice period, possibly shorten by the security council
+  uint256 internal _approvedUpgradeNoticePeriod;
+
+  /// @dev Upgrade start timestamp (as seconds since unix epoch)
+  /// @dev Will be equal to zero in case of not active upgrade mode
+  uint256 internal _upgradeStartTimestamp;
+
+  /// @dev Stores boolean flags which means the confirmations of the upgrade for each member of security council
+  /// @dev Will store zeroes in case of not active upgrade mode
+  mapping(uint256 => bool) internal _securityCouncilApproves;
+  uint256 internal _numberOfApprovalsFromSecurityCouncil;
+
+  constructor(address[3] memory _securityCouncilMembers, address _zkBNB) {
+    securityCouncilMembers = _securityCouncilMembers;
+
+    zkBNB = IZkBNBDesertMode(_zkBNB);
+
+    _approvedUpgradeNoticePeriod = UPGRADE_NOTICE_PERIOD;
+    emit NoticePeriodChange(_approvedUpgradeNoticePeriod);
+  }
+
+  // Upgrade functional
+  /// @notice Shortest Notice period before activation preparation status of upgrade mode
+  ///         Notice period can be set by secure council
+  function getNoticePeriod() external view returns (uint256) {
+    return SHORTEST_UPGRADE_NOTICE_PERIOD;
+  }
+
+  /// @notice Notification that upgrade notice period started
+  function upgradeNoticePeriodStarted() external {
+    _upgradeStartTimestamp = block.timestamp;
+  }
+
+  /// @notice Notification that upgrade preparation status is activated
+  function upgradePreparationStarted() external {
+    upgradePreparationActive = true;
+    _upgradePreparationActivationTime = block.timestamp;
+    // Check if the _approvedUpgradeNoticePeriod is passed
+    require(block.timestamp >= _upgradeStartTimestamp.add(_approvedUpgradeNoticePeriod));
+  }
+
+  /// @notice Notification that upgrade canceled
+  function upgradeCanceled() external {
+    clearUpgradeStatus();
+  }
+
+  /// @notice Notification that upgrade finishes
+  function upgradeFinishes() external {
+    clearUpgradeStatus();
+  }
+
+  /// @notice Checks that contract is ready for upgrade
+  /// @return bool flag indicating that contract is ready for upgrade
+  function isReadyForUpgrade() external view returns (bool) {
+    return !zkBNB.desertMode();
+  }
+
+  /// @dev When upgrade is finished or canceled we must clean upgrade-related state.
+  function clearUpgradeStatus() internal {
+    upgradePreparationActive = false;
+    _upgradePreparationActivationTime = 0;
+    _approvedUpgradeNoticePeriod = UPGRADE_NOTICE_PERIOD;
+    emit NoticePeriodChange(_approvedUpgradeNoticePeriod);
+    _upgradeStartTimestamp = 0;
+    for (uint256 i = 0; i < securityCouncilMembers.length; ++i) {
+      _securityCouncilApproves[i] = false;
     }
+    _numberOfApprovalsFromSecurityCouncil = 0;
+  }
 
-    /// UpgradeableMaster functions
+  /// @notice processing new approval of decrease upgrade notice period time to zero
+  function cutUpgradeNoticePeriod() external {
+    require(!zkBNB.desertMode());
 
-    // Upgrade functional
-    /// @notice Shortest Notice period before activation preparation status of upgrade mode
-    ///         Notice period can be set by secure council
-    function getNoticePeriod() external view returns (uint256) {
-        return approvedUpgradeNoticePeriod;
-    }
+    for (uint256 id = 0; id < securityCouncilMembers.length; ++id) {
+      if (securityCouncilMembers[id] == msg.sender) {
+        require(_upgradeStartTimestamp != 0);
+        require(!_securityCouncilApproves[id]);
+        _securityCouncilApproves[id] = true;
+        _numberOfApprovalsFromSecurityCouncil++;
 
-    /// @notice Notification that upgrade notice period started
-    /// @dev Can be external because Proxy contract intercepts illegal calls of this function
-    function upgradeNoticePeriodStarted() external {
-        upgradeStartTimestamp = block.timestamp;
-    }
-
-    /// @notice Notification that upgrade preparation status is activated
-    /// @dev Can be external because Proxy contract intercepts illegal calls of this function
-    function upgradePreparationStarted() external {
-        upgradePreparationActive = true;
-        upgradePreparationActivationTime = block.timestamp;
-        // Check if the approvedUpgradeNoticePeriod is passed
-        require(
-            block.timestamp >=
-                upgradeStartTimestamp.add(approvedUpgradeNoticePeriod)
-        );
-    }
-
-    /// @notice Notification that upgrade canceled
-    /// @dev Can be external because Proxy contract intercepts illegal calls of this function
-    function upgradeCanceled() external {
-        clearUpgradeStatus();
-    }
-
-    /// @notice Notification that upgrade finishes
-    /// @dev Can be external because Proxy contract intercepts illegal calls of this function
-    function upgradeFinishes() external {
-        clearUpgradeStatus();
-    }
-
-    /// @notice Checks that contract is ready for upgrade
-    /// @return bool flag indicating that contract is ready for upgrade
-    function isReadyForUpgrade() external view returns (bool) {
-        return !desertMode;
-    }
-
-    function upgrade(bytes calldata upgradeParameters) external {}
-
-    /// @dev When upgrade is finished or canceled we must clean upgrade-related state.
-    function clearUpgradeStatus() internal {
-        upgradePreparationActive = false;
-        upgradePreparationActivationTime = 0;
-        approvedUpgradeNoticePeriod = SHORTEST_UPGRADE_NOTICE_PERIOD;
-        emit NoticePeriodChange(approvedUpgradeNoticePeriod);
-        upgradeStartTimestamp = 0;
-        for (uint256 i = 0; i < securityCouncilMembers.length; ++i) {
-            securityCouncilApproves[i] = false;
+        if (_numberOfApprovalsFromSecurityCouncil == SECURITY_COUNCIL_THRESHOLD) {
+          if (_approvedUpgradeNoticePeriod > 0) {
+            _approvedUpgradeNoticePeriod = 0;
+            emit NoticePeriodChange(_approvedUpgradeNoticePeriod);
+          }
         }
-        numberOfApprovalsFromSecurityCouncil = 0;
+        break;
+      }
     }
+  }
 
-    // TODO
-    uint256 internal constant SECURITY_COUNCIL_2_WEEKS_THRESHOLD = 3;
-    uint256 internal constant SECURITY_COUNCIL_1_WEEK_THRESHOLD = 2;
-    uint256 internal constant SECURITY_COUNCIL_3_DAYS_THRESHOLD = 1;
+  function changeSecurityCouncilMembers(address[3] memory _securityCouncilMembers) external {
+    securityCouncilMembers = _securityCouncilMembers;
+    emit SecurityCouncilChanged(_securityCouncilMembers);
+  }
 
-    function cutUpgradeNoticePeriod() external {
-        // TODO: check zkBNB desertMode
-        // requireActive();
+  function changeZkBNBAddress(address _zkBNB) external {
+    zkBNB = IZkBNBDesertMode(_zkBNB);
 
-        for (uint256 id = 0; id < securityCouncilMembers.length; ++id) {
-            if (securityCouncilMembers[id] == msg.sender) {
-                require(upgradeStartTimestamp != 0);
-                require(securityCouncilApproves[id] == false);
-                securityCouncilApproves[id] = true;
-                numberOfApprovalsFromSecurityCouncil++;
-
-                if (
-                    numberOfApprovalsFromSecurityCouncil ==
-                    SECURITY_COUNCIL_2_WEEKS_THRESHOLD
-                ) {
-                    if (approvedUpgradeNoticePeriod > 2 weeks) {
-                        approvedUpgradeNoticePeriod = 2 weeks;
-                        emit NoticePeriodChange(approvedUpgradeNoticePeriod);
-                    }
-                } else if (
-                    numberOfApprovalsFromSecurityCouncil ==
-                    SECURITY_COUNCIL_1_WEEK_THRESHOLD
-                ) {
-                    if (approvedUpgradeNoticePeriod > 1 weeks) {
-                        approvedUpgradeNoticePeriod = 1 weeks;
-                        emit NoticePeriodChange(approvedUpgradeNoticePeriod);
-                    }
-                } else if (
-                    numberOfApprovalsFromSecurityCouncil ==
-                    SECURITY_COUNCIL_3_DAYS_THRESHOLD
-                ) {
-                    if (approvedUpgradeNoticePeriod > 3 days) {
-                        approvedUpgradeNoticePeriod = 3 days;
-                        emit NoticePeriodChange(approvedUpgradeNoticePeriod);
-                    }
-                }
-
-                break;
-            }
-        }
-    }
+    emit ZkBNBChanged(_zkBNB);
+  }
 }
