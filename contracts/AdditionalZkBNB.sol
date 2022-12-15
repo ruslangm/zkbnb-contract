@@ -578,9 +578,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
-        require(priorReqType == TxTypes.TxType.FullExitNft, "J");
         if (priorReqType != TxTypes.TxType.FullExit) {
             emit Log("ERROR!", _priorityRequestId, priorReqType);
+            require(priorReqType == TxTypes.TxType.FullExitNft, "J");
         }
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
