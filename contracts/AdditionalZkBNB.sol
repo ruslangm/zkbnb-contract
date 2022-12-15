@@ -32,9 +32,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         pendingBalances[_packedBalanceKey] = PendingBalance(balance.add(_amount), FILLED_GAS_RESERVE_VALUE);
     }
 
-  event Log(
-    string msg
-  );
+    event Log(
+        string msg
+    );
 
     /*
         StateRoot
@@ -564,8 +564,8 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
-            string memory msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
-            ",required=FullExit";
+            string memory msg = string.concat("ERROR! priorReqId=", _priorityRequestId, ",priorReqType=", priorReqType,
+                ",required=FullExit");
             emit Log(msg);
         }
         require(priorReqType == TxTypes.TxType.FullExit, "J");
@@ -581,8 +581,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExitNft) {
-            string memory msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
-            ",required=FullExitNft";
+            string memory msg =
+            string.concat("ERROR! priorReqId=", _priorityRequestId, ",priorReqType=", priorReqType,
+                ",required=FullExitNft");
             emit Log(msg);
         }
         require(priorReqType == TxTypes.TxType.FullExitNft, "J");
