@@ -562,12 +562,12 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Checks that FullExit is same as _tx in priority queue
     /// @param _fullExit FullExit data
     /// @param _priorityRequestId _tx's id in priority queue
-    function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal view {
+    function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
-        require(priorReqType == TxTypes.TxType.FullExit, "J");
         if (priorReqType != TxTypes.TxType.FullExit) {
             emit Log("ERROR!", _priorityRequestId, priorReqType);
+            require(priorReqType == TxTypes.TxType.FullExit, "J");
         }
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
@@ -577,7 +577,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Checks that FullExitNFT is same as _tx in priority queue
     /// @param _fullExitNft FullExit nft data
     /// @param _priorityRequestId _tx's id in priority queue
-    function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal view {
+    function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         require(priorReqType == TxTypes.TxType.FullExitNft, "J");
