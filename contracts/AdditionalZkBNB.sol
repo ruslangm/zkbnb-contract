@@ -564,7 +564,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
-            string msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
+            string memory msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
             ",required=FullExit";
             emit Log(msg);
         }
@@ -581,7 +581,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExitNft) {
-            string msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
+            string memory msg = "ERROR! priorReqId=" + _priorityRequestId + ",priorReqType=" + priorReqType +
             ",required=FullExitNft";
             emit Log(msg);
         }
