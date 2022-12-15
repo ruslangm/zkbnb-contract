@@ -397,7 +397,6 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @dev returns new block StoredBlockInfo
     function commitOneBlock(StoredBlockInfo memory _previousBlock, CommitBlockInfo memory _newBlock)
     internal
-    view
     returns (StoredBlockInfo memory storedNewBlock)
     {
         // only commit next block
@@ -449,7 +448,6 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Collect onchain ops and ensure it was not executed before
     function collectOnchainOps(CommitBlockInfo memory _newBlockData)
     internal
-    view
     returns (
         bytes32 processableOperationsHash,
         uint64 priorityOperationsProcessed
