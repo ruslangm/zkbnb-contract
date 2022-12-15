@@ -27,6 +27,10 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     using SafeMath for uint256;
     using SafeMathUInt128 for uint128;
 
+    event Log(
+        string msg
+    );
+
     function increaseBalanceToWithdraw(bytes22 _packedBalanceKey, uint128 _amount) internal {
         uint128 balance = pendingBalances[_packedBalanceKey].balanceToWithdraw;
         pendingBalances[_packedBalanceKey] = PendingBalance(balance.add(_amount), FILLED_GAS_RESERVE_VALUE);
@@ -564,6 +568,11 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         require(priorReqType == TxTypes.TxType.FullExit, "J");
+        if (priorReqType != TxTypes.TxType.FullExit) {
+            string memory logMsg = string.concat("ERROR! priorReqId=", _priorityRequestId, ",priorReqType=", priorReqType,
+                ",required=FullExit");
+            emit Log(logMsg);
+        }
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
         require(TxTypes.checkFullExitInPriorityQueue(_fullExit, hashedPubData), "K");
@@ -576,6 +585,11 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         require(priorReqType == TxTypes.TxType.FullExitNft, "J");
+        if (priorReqType != TxTypes.TxType.FullExit) {
+            string memory logMsg = string.concat("ERROR! priorReqId=", _priorityRequestId, ",priorReqType=", priorReqType,
+                ",required=FullExit");
+            emit Log(logMsg);
+        }
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
         require(TxTypes.checkFullExitNftInPriorityQueue(_fullExitNft, hashedPubData), "K");
