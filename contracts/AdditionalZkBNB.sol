@@ -473,6 +473,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
             uint32 pubdataOffset = _newBlockData.publicDataOffsets[i];
             require(pubdataOffset < pubData.length, "B");
 
+            console.log("INFO! uncommittedPriorityRequestsOffset=%s,priorityOperationsProcessed=%s",
+                uncommittedPriorityRequestsOffset, priorityOperationsProcessed);
+
             TxTypes.TxType txType = TxTypes.TxType(uint8(pubData[pubdataOffset]));
 
             if (txType == TxTypes.TxType.RegisterZNS) {
