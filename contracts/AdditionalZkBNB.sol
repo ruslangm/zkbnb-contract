@@ -21,13 +21,13 @@ import "./TxTypes.sol";
 
 import "./UpgradeableMaster.sol";
 
+import "hardhat/console.sol";
+
 /// @title ZkBNB additional main contract
 /// @author ZkBNB
 contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Receiver {
     using SafeMath for uint256;
     using SafeMathUInt128 for uint128;
-
-    event Log(string msg, uint64 priorityRequestId, TxTypes.TxType txType);
 
     function increaseBalanceToWithdraw(bytes22 _packedBalanceKey, uint128 _amount) internal {
         uint128 balance = pendingBalances[_packedBalanceKey].balanceToWithdraw;
@@ -564,9 +564,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
-            emit Log("ERROR!", _priorityRequestId, priorReqType);
-            require(priorReqType == TxTypes.TxType.FullExit, "J");
+            console.log("ERROR! priorReqId=%s,priorReqType=%s,required=FullExit", _priorityRequestId, priorReqType);
         }
+        require(priorReqType == TxTypes.TxType.FullExit, "J");
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
         require(TxTypes.checkFullExitInPriorityQueue(_fullExit, hashedPubData), "K");
@@ -578,10 +578,10 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
-        if (priorReqType != TxTypes.TxType.FullExit) {
-            emit Log("ERROR!", _priorityRequestId, priorReqType);
-            require(priorReqType == TxTypes.TxType.FullExitNft, "J");
+        if (priorReqType != TxTypes.TxType.FullExitNft) {
+            console.log("ERROR! priorReqId=%s,priorReqType=%s,required=FullExitNft", _priorityRequestId, priorReqType);
         }
+        require(priorReqType == TxTypes.TxType.FullExitNft, "J");
 
         bytes20 hashedPubData = priorityRequests[_priorityRequestId].hashedPubData;
         require(TxTypes.checkFullExitNftInPriorityQueue(_fullExitNft, hashedPubData), "K");
