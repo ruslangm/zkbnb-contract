@@ -397,6 +397,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @dev returns new block StoredBlockInfo
     function commitOneBlock(StoredBlockInfo memory _previousBlock, CommitBlockInfo memory _newBlock)
     internal
+    view
     returns (StoredBlockInfo memory storedNewBlock)
     {
         // only commit next block
@@ -448,6 +449,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Collect onchain ops and ensure it was not executed before
     function collectOnchainOps(CommitBlockInfo memory _newBlockData)
     internal
+    view
     returns (
         bytes32 processableOperationsHash,
         uint64 priorityOperationsProcessed
@@ -560,7 +562,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Checks that FullExit is same as _tx in priority queue
     /// @param _fullExit FullExit data
     /// @param _priorityRequestId _tx's id in priority queue
-    function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal {
+    function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal view {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
@@ -575,7 +577,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @notice Checks that FullExitNFT is same as _tx in priority queue
     /// @param _fullExitNft FullExit nft data
     /// @param _priorityRequestId _tx's id in priority queue
-    function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal {
+    function checkPriorityOperation(TxTypes.FullExitNft memory _fullExitNft, uint64 _priorityRequestId) internal view {
         TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExitNft) {
