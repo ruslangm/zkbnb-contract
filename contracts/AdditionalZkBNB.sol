@@ -243,6 +243,8 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         uint64 expirationBlock = uint64(block.number + PRIORITY_EXPIRATION);
 
         uint64 nextPriorityRequestId = firstPriorityRequestId + totalOpenPriorityRequests;
+        console.log("INFO! Add tx,type=%s,nextPriorityRequestId=%s",
+            uint(_txType), nextPriorityRequestId);
 
         bytes20 hashedPubData = Utils.hashBytesToBytes20(_pubData);
 
@@ -288,6 +290,9 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         assetAmount : 0 // unknown at this point
         });
         bytes memory pubData = TxTypes.writeFullExitPubDataForPriorityQueue(_tx);
+
+        console.log("INFO! Add tx,type=FullExit,accountNameHash=%s,assetId=%s to priority requests",
+            accountNameHash, assetId);
         addPriorityRequest(TxTypes.TxType.FullExit, pubData);
 
         // User must fill storage slot of balancesToWithdraw(msg.sender, tokenId) with nonzero value
@@ -321,6 +326,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         nftContentHash : bytes32(0x0) // unknown,
         });
         bytes memory pubData = TxTypes.writeFullExitNftPubDataForPriorityQueue(_tx);
+        console.log("INFO! Add tx,type=FullExitNft,accountNameHash=%s to priority requests", accountNameHash);
         addPriorityRequest(TxTypes.TxType.FullExitNft, pubData);
     }
 
@@ -563,7 +569,8 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @param _fullExit FullExit data
     /// @param _priorityRequestId _tx's id in priority queue
     function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal view {
-        TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
+        PriorityTx priorityTx = priorityRequests[_priorityRequestId];
+        TxTypes.TxType priorReqType = priorityTx.txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
             console.log("ERROR! priorReqId=%s,priorReqType=%s,required=FullExit", _priorityRequestId, uint(priorReqType));
