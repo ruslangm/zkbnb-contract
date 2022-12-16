@@ -291,8 +291,8 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         });
         bytes memory pubData = TxTypes.writeFullExitPubDataForPriorityQueue(_tx);
 
-        console.log("INFO! Add tx,type=FullExit,accountNameHash=%s,assetId=%s to priority requests",
-            accountNameHash, assetId);
+        console.log("INFO! Add tx,type=FullExit,accountName=%s,assetId=%s to priority requests",
+            _accountName, assetId);
         addPriorityRequest(TxTypes.TxType.FullExit, pubData);
 
         // User must fill storage slot of balancesToWithdraw(msg.sender, tokenId) with nonzero value
@@ -326,7 +326,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
         nftContentHash : bytes32(0x0) // unknown,
         });
         bytes memory pubData = TxTypes.writeFullExitNftPubDataForPriorityQueue(_tx);
-        console.log("INFO! Add tx,type=FullExitNft,accountNameHash=%s to priority requests", accountNameHash);
+        console.log("INFO! Add tx,type=FullExitNft,accountName=%s to priority requests", _accountName);
         addPriorityRequest(TxTypes.TxType.FullExitNft, pubData);
     }
 
