@@ -569,8 +569,7 @@ contract AdditionalZkBNB is Storage, Config, Events, ReentrancyGuard, IERC721Rec
     /// @param _fullExit FullExit data
     /// @param _priorityRequestId _tx's id in priority queue
     function checkPriorityOperation(TxTypes.FullExit memory _fullExit, uint64 _priorityRequestId) internal view {
-        PriorityTx priorityTx = priorityRequests[_priorityRequestId];
-        TxTypes.TxType priorReqType = priorityTx.txType;
+        TxTypes.TxType priorReqType = priorityRequests[_priorityRequestId].txType;
         // incorrect priority _tx type
         if (priorReqType != TxTypes.TxType.FullExit) {
             console.log("ERROR! priorReqId=%s,priorReqType=%s,required=FullExit", _priorityRequestId, uint(priorReqType));
